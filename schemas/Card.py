@@ -16,3 +16,7 @@ class Card(CardBase):
 
     class Config:
         orm_mode = True
+
+class BurnResponse(BaseModel):
+    burnSuccessful: str
+    uid: str = None
