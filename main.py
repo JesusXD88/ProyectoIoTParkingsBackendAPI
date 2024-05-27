@@ -1,14 +1,10 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, WebSocket, WebSocketDisconnect, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-from typing import List
-from jose import JWTError, jwt
-from datetime import datetime, timedelta
-from entities.User import User
-import os
-from dotenv import load_dotenv, find_dotenv
-import json
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, JSONResponse
+from sqlalchemy.orm import Session
+from ProyectoIoTParkingsBackendAPI import crud, models, schemas, auth, database
+from datetime import datetime
 
 app = FastAPI()
 
