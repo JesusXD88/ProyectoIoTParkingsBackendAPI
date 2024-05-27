@@ -1,0 +1,12 @@
+from sqlalchemy import Column, Integer, String, Boolean, TIMESTAMP
+from ..database import Base
+
+class card(Base):
+    __tablename__ = "cards"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uid = Column(String, unique=True, index=True)
+    authored_access = Column(Boolean, default=False)
+    valid_from = Column(TIMESTAMP, default="CURRENT_TIMESTAMP")
+    valid_until = Column(TIMESTAMP)
+    created_at = Column(TIMESTAMP, default="CURRENT_TIMESTAMP")
