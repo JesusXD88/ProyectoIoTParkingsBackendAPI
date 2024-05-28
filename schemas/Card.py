@@ -15,8 +15,8 @@ class Card(CardBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attribute = True
 
 class BurnResponse(BaseModel):
     burnSuccessful: str
-    uid: str = None
+    uid: str | None = None

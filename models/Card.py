@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, TIMESTAMP
-from ..database import Base
+from models import Base
 
 class Card(Base):
     __tablename__ = "cards"

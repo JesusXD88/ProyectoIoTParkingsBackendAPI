@@ -1,5 +1,4 @@
 import socket
-
 from fastapi import FastAPI, Depends, HTTPException, status, WebSocket, WebSocketDisconnect, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
@@ -96,7 +95,7 @@ async def burn_card_action(current_user: schemas.User = Depends(get_current_acti
         await websocket.send_text("CHANGE_KEY")
     return JSONResponse(content={"status": "burn card command sent"})
 
-def handle_burn_response(message: schemas.Card.BurnResponse):
+def handle_burn_response(message: schemas.BurnResponse):
     if message.burnSuccessful:
         print(f"Burn successful for card with uid {message.uid}")
     else:
