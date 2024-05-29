@@ -1,12 +1,14 @@
+from typing import Optional
 from sqlalchemy.orm import Session
-from ..models import Card as models
-from ..schemas import Card as schemas
+from models import Card
+from schemas import CardCreate
+from datetime import datetime
 
 def get_card_by_uid(db: Session, uid: str):
-    return db.query(models.Card).filter(models.Card.uid == uid).first()
+    return db.query(Card).filter(Card.uid == uid).first()
 
-def create_card(db: Session, card: schemas.CardCreate):
-    db_card = models.Card(
+def create_card(db: Session, card: CardCreate):
+    db_card = Card(
         uid=card.uid,
         authored_access=card.authored_access,
         valid_from=card.valid_from,
@@ -16,3 +18,14 @@ def create_card(db: Session, card: schemas.CardCreate):
     db.commit()
     db.refresh(db_card)
     return db_card
+
+def update_card(db: Session, uid: str, authored_access: bool, valid_from: datetime, valid_to: Optional[datetime]):
+    card = get_card_by_uid(db, uid)
+    if card:
+        card.authored_access = authored_access
+        card.valid_from = valid_from
+        card.valid_to = valid_to
+        db.commit()
+        db.refresh(card)
+        return card
+    return None

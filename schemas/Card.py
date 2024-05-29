@@ -4,7 +4,7 @@ from datetime import datetime
 class CardBase(BaseModel):
     uid: str
     authored_access: bool = False
-    valid_from: datetime | None = None
+    valid_from: datetime
     valid_to: datetime | None = None
 
 class CardCreate(CardBase):
@@ -18,5 +18,5 @@ class Card(CardBase):
         from_attribute = True
 
 class BurnResponse(BaseModel):
-    burnSuccessful: str
+    burnSuccessful: bool
     uid: str | None = None
