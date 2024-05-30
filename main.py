@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 from auth import Auth
+from middlewares import HTTPSRedirectMiddleware
 import crud, models, schemas, database, connmanager
 from datetime import datetime, timedelta, timezone, UTC
 from jose import jwt, JWTError
@@ -15,6 +16,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
+
+app.add_middleware(HTTPSRedirectMiddleware)
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -63,7 +66,7 @@ async def read_root(request: Request, current_user: schemas.User = Depends(get_c
     return templates.TemplateResponse("index.html", {"request": request, "user": current_user})
 
 @app.get("/authcard")
-async def authenticate_card(uid: str, current_user: schemas.User = Depends(get_current_active_user), db: Session = Depends(database.get_db)):
+async def authenticate_card(uid: str, db: Session = Depends(database.get_db)):
     card = crud.get_card_by_uid(db, uid)
     current_time = datetime.now(timezone.utc)
     if card.authored_access and card.valid_from.replace(tzinfo=timezone.utc) <= current_time <= card.valid_to.replace(tzinfo=timezone.utc):
@@ -163,4 +166,4 @@ def card_to_dict(card: models.Card):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
