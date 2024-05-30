@@ -21,8 +21,10 @@ jobs:
         service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
 
     - name: Authenticate Docker to Google Container Registry
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
       run: |
-        echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" > /tmp/gcloud.json
+        echo "${GOOGLE_APPLICATION_CREDENTIALS_JSON}" > /tmp/gcloud.json
         gcloud auth activate-service-account --key-file=/tmp/gcloud.json
         gcloud auth configure-docker
 
