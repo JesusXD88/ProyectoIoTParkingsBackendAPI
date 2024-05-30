@@ -25,6 +25,7 @@ jobs:
 
     - name: Authenticate Docker to Google Container Registry
       run: |
+        cat /tmp/gcloud.json
         gcloud auth activate-service-account --key-file=/tmp/gcloud.json
         gcloud auth configure-docker
 
