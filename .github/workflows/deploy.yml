@@ -21,7 +21,7 @@ jobs:
         service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
 
     - name: Write GCP credentials to file
-      run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" > /tmp/gcloud.json
+      run: echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" | sed 's/\\n/\n/g' > /tmp/gcloud.json
 
     - name: Authenticate Docker to Google Container Registry
       run: |
