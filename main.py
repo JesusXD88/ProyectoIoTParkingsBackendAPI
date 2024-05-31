@@ -6,9 +6,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 from auth import Auth
-from middlewares import HTTPSRedirectMiddleware
 import crud, models, schemas, database, connmanager
-from datetime import datetime, timedelta, timezone, UTC
+from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -16,8 +15,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
-
-app.add_middleware(HTTPSRedirectMiddleware)
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -82,7 +79,6 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None), db:
 
     try:
         payload = jwt.decode(token, Auth.SECRET_KEY, algorithms=[Auth.ALGORITHM])
-        #print(f"Payload: {payload}")
         username: str = payload.get("sub")
         if username is None:
             await socket.close()

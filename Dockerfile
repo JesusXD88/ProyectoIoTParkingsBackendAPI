@@ -13,6 +13,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar el proyecto al directorio de trabajo
 COPY . .
 
+# Definir las variables de entorno
+ENV GOOGLE_APPLICATION_CREDENTIALS=/app/application_default_credentials.json
+
 # Exponer el puerto 8000
 EXPOSE 8000
 
