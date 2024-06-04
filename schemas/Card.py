@@ -10,6 +10,9 @@ class CardBase(BaseModel):
 class CardCreate(CardBase):
     pass
 
+class CardUpdate(CardBase):
+    pass
+
 class Card(CardBase):
     id: int
     created_at: datetime

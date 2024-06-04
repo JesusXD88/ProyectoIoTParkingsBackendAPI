@@ -7,6 +7,9 @@ from datetime import datetime
 def get_card_by_uid(db: Session, uid: str):
     return db.query(Card).filter(Card.uid == uid).first()
 
+def get_cards(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(Card).offset(skip).limit(limit).all()
+
 def create_card(db: Session, card: CardCreate):
     db_card = Card(
         uid=card.uid,
@@ -29,3 +32,8 @@ def update_card(db: Session, uid: str, authored_access: bool, valid_from: dateti
         db.refresh(card)
         return card
     return None
+
+def delete_card(db: Session, card: Card):
+    db.delete(card)
+    db.commit()
+    return card
