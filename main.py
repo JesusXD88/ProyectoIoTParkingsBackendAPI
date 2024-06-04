@@ -4,6 +4,7 @@ from fastapi import FastAPI, Depends, HTTPException, status, WebSocket, WebSocke
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from auth import Auth
@@ -24,6 +25,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -96,7 +99,7 @@ async def read_dashboard(request: Request):
 async def authenticate_card(uid: str, db: Session = Depends(database.get_db)):
     card = crud.get_card_by_uid(db, uid)
     current_time = datetime.now(timezone.utc)
-    if card.authored_access and card.valid_from.replace(tzinfo=timezone.utc) <= current_time <= card.valid_to.replace(tzinfo=timezone.utc):
+    if card is not None and card.authored_access and card.valid_from.replace(tzinfo=timezone.utc) <= current_time <= card.valid_to.replace(tzinfo=timezone.utc):
         return JSONResponse(content={"auth": True, "barrier_open_sec": barrier_open_time})
     return JSONResponse(content={"auth": False, "barrier_open_sec": barrier_open_time})
 
