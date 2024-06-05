@@ -1,3 +1,4 @@
+import json
 import socket
 from typing import Optional, List
 from fastapi import FastAPI, Depends, HTTPException, status, WebSocket, WebSocketDisconnect, Request, Query, Body, Form
@@ -95,14 +96,6 @@ async def read_root(request: Request):
 async def read_dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
-@app.get("/authcard")
-async def authenticate_card(uid: str, db: Session = Depends(database.get_db)):
-    card = crud.get_card_by_uid(db, uid)
-    current_time = datetime.now(timezone.utc)
-    if card is not None and card.authored_access and card.valid_from.replace(tzinfo=timezone.utc) <= current_time <= card.valid_to.replace(tzinfo=timezone.utc):
-        return JSONResponse(content={"auth": True, "barrier_open_sec": barrier_open_time})
-    return JSONResponse(content={"auth": False, "barrier_open_sec": barrier_open_time})
-
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, token: str = Query(None), db: Session = Depends(database.get_db)):
@@ -121,9 +114,14 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None), db:
         while True:
             data = await websocket.receive_text()
             print(f"Mensaje recibido: {data}")
-            message = schemas.BurnResponse.parse_raw(data)
-            handle_burn_response(message, db)
-            await manager.broadcast(f"Message was: {data}")
+            message = schemas.BaseMessage.parse_raw(data)
+            if message.action == "AUTH_CARD":
+                auth_message = schemas.UIDMessage.parse_raw(data)
+                auth_response = await handle_authentication(auth_message.uid, db)
+                await websocket.send_text(auth_response)
+            elif message.action == "BURN_RESPONSE":
+                burn_response = schemas.BurnResponse.parse_raw(data)
+                handle_burn_response(burn_response, db)
 
     except JWTError:
         print("Error token")
@@ -131,6 +129,19 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None), db:
     except WebSocketDisconnect:
         manager.disconnect(websocket)
         print("Cliente desconectado")
+
+async def handle_authentication(uid: str, db: Session):
+    card = crud.get_card_by_uid(db, uid)
+    if card:
+        db.commit()
+        db.refresh(card)
+        db.close()
+        db = database.get_db()
+
+    current_time = datetime.now(timezone.utc)
+    if card is not None and card.authored_access and card.valid_from.replace(tzinfo=timezone.utc) <= current_time <= card.valid_to.replace(tzinfo=timezone.utc):
+        return schemas.AuthResponse(action="AUTH_RESPONSE", auth=True, barrier_open_sec=barrier_open_time).json()
+    return schemas.AuthResponse(action="AUTH_RESPONSE", auth=False, barrier_open_sec=barrier_open_time).json()
 
 @app.post("/burncard")
 async def burn_card_action(current_user: schemas.User = Depends(get_current_active_user), authored_access: bool = Form(...), valid_from: datetime = Form(...), valid_to: Optional[datetime] = Form(None), db: Session = Depends(database.get_db)):
@@ -141,8 +152,12 @@ async def burn_card_action(current_user: schemas.User = Depends(get_current_acti
     burn_data["valid_from"] = valid_from.replace(tzinfo=timezone.utc)
     burn_data["valid_to"] = valid_to.replace(tzinfo=timezone.utc)
 
+    message = {
+        "action": "BURN_CARD"
+    }
+
     for websocket in manager.active_connections:
-        await websocket.send_text("BURN_CARD")
+        await websocket.send_text(json.dumps(message))
 
     return JSONResponse(content={"status": "burn card command sent"})
 
@@ -181,7 +196,7 @@ async def burn_status_endpoint(user: schemas.User = Depends(get_current_active_u
     return JSONResponse(content=burn_status)
 
 
-@app.get("/cards/", response_model=List[schemas.Card])
+@app.get("/cards", response_model=List[schemas.Card])
 async def read_cards(current_user: schemas.User = Depends(get_current_active_user), skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db)):
     if not current_user.is_admin:
         raise HTTPException(status_code=400, detail="Access forbidden")
@@ -233,7 +248,11 @@ async def delete_card(uid: str, db: Session = Depends(database.get_db), current_
 
 @app.post("/open_barrier")
 async def open_barrier(current_user: schemas.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
-    await manager.broadcast(f"OPEN_BARRIER:{barrier_open_time}")
+    message = {
+        "action": "OPEN_BARRIER",
+        "barrier_open_sec": barrier_open_time
+    }
+    await manager.broadcast(json.dumps(message))
     return {"status": "Barrier opened", "barrier_open_time": barrier_open_time}
 
 @app.post("/set_barrier_time")
@@ -243,8 +262,6 @@ async def set_barrier_time(open_sec: int = Body(...), current_user: schemas.User
     barrier_open_time = open_sec
     return {"status": "Barrier time set", "barrier_open_time": barrier_open_time}
 
-async def handle_open_barrier():
-    await manager.broadcast(f"OPEN_BARRIER:{barrier_open_time}")
 
 if __name__ == "__main__":
     import uvicorn

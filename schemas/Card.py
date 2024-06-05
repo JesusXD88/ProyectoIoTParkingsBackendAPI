@@ -20,6 +20,17 @@ class Card(CardBase):
     class Config:
         from_attribute = True
 
-class BurnResponse(BaseModel):
+class BaseMessage(BaseModel):
+    action: str
+
+class UIDMessage(BaseMessage):
+    uid: str
+
+class AuthResponse(BaseMessage):
+    auth: bool
+    barrier_open_sec: int
+
+class BurnResponse(BaseMessage):
     burnSuccessful: bool
     uid: str | None = None
+

@@ -5,7 +5,7 @@ from schemas import CardCreate
 from datetime import datetime
 
 def get_card_by_uid(db: Session, uid: str):
-    return db.query(Card).filter(Card.uid == uid).first()
+    return db.query(Card).filter(Card.uid == uid).execution_options(populate_existing=True).first()
 
 def get_cards(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Card).offset(skip).limit(limit).all()
